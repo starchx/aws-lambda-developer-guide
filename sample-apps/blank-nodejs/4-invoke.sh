@@ -3,8 +3,8 @@ set -eo pipefail
 FUNCTION=$(aws cloudformation describe-stack-resource --stack-name blank-nodejs --logical-resource-id function --query 'StackResourceDetail.PhysicalResourceId' --output text)
 
 while true; do
-  aws lambda invoke --function-name $FUNCTION --payload file://event.json out.json
+  aws lambda invoke --function-name $FUNCTION --cli-binary-format raw-in-base64-out --payload file://event.json out.json
   cat out.json
   echo ""
-  sleep 2
+  sleep 10
 done

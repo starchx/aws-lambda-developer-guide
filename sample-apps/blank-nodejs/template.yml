@@ -15,6 +15,8 @@ Resources:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaReadOnlyAccess
         - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: "*"
       Tracing: Active
       Layers:
         - !Ref libs
