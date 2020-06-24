@@ -1,5 +1,7 @@
 const AWSXRay = require('aws-xray-sdk-core')
 const AWS = AWSXRay.captureAWS(require('aws-sdk'))
+AWSXRay.captureHTTPsGlobal(require('http'));
+AWSXRay.captureHTTPsGlobal(require('https'));
 
 // Create client outside of handler to reuse
 const lambda = new AWS.Lambda()
@@ -26,9 +28,16 @@ exports.handler = async (event) => {
     payload.Item.id = (+ new Date()).toString();
 
     const seg = AWSXRay.getSegment()
-    const sub = seg.addNewSubsegment(`redis-new-subsegment`)
-    sub.addAnnotation('cacheget', 'test') 
 
+    // external api call
+    const subapi = seg.addNewSubsegment(`external-api-subsegment`);
+    subapi.addAnnotation('externalapi', 'test');
+    makeExternalAPI();
+    subapi.close();
+
+    // dynamodb call
+    const sub = seg.addNewSubsegment(`redis-new-subsegment`);
+    sub.addAnnotation('cacheget', 'test');
     switch (operation) {
         case 'create':
             await dynamo.put(payload).promise();
@@ -58,6 +67,40 @@ exports.handler = async (event) => {
             throw new Error(`Unrecognized operation "${operation}"`);
     }
 };
+
+var makeExternalAPI = function(){
+
+  var http = require("https");
+
+  var options = {
+    "method": "GET",
+    "hostname": "ip-ranges.amazonaws.com",
+    "port": null,
+    "path": "/ip-ranges.json",
+    "headers": {
+      "accept": "text/json",
+      "cache-control": "no-cache"
+    }
+  };
+
+  var req = http.request(options, function (res) {
+    var chunks = [];
+
+    res.on("data", function (chunk) {
+      chunks.push(chunk);
+    });
+
+    res.on("end", function () {
+      var body = Buffer.concat(chunks);
+      console.log(body.toString());
+    });
+  });
+
+  req.end();
+
+  return "done";
+}
+
 
 
 // // Handler
