@@ -29,13 +29,28 @@ exports.handler = async (event) => {
 
     const seg = AWSXRay.getSegment()
 
+    // call redis
+    console.log('start redis conn');
+    const subSegmentRedis = seg.addNewSubsegment('my_redis');
+    subSegmentRedis.namespace = 'remote'
+    const redis = require("redis");
+    const client = redis.createClient("redis://myredis.uihybp.ng.0001.use1.cache.amazonaws.com:6379");
+    client.on("error", function(error) {
+      console.error(error);
+    });
+    client.set("key", "value", redis.print);
+    client.get("key", redis.print);
+    subSegmentRedis.close();
+
     // external api call
+    console.log('start https api conn');
     const subapi = seg.addNewSubsegment(`external-api-subsegment`);
     subapi.addAnnotation('externalapi', 'test');
     makeExternalAPI();
     subapi.close();
 
     // dynamodb call
+    console.log('start dynamodb conn');
     const sub = seg.addNewSubsegment(`redis-new-subsegment`);
     sub.addAnnotation('cacheget', 'test');
     switch (operation) {

@@ -9,17 +9,24 @@ Resources:
       Runtime: nodejs12.x
       CodeUri: function/.
       Description: Call the AWS Lambda API
-      Timeout: 10
+      Timeout: 30
       # Function's execution role
       Policies:
         - AWSLambdaBasicExecutionRole
         - AWSLambdaReadOnlyAccess
         - AWSXrayWriteOnlyAccess
+        - AWSLambdaVPCAccessExecutionRole
         - DynamoDBCrudPolicy:
             TableName: "*"
       Tracing: Active
       Layers:
         - !Ref libs
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-d091c691
+        SubnetIds: 
+          - subnet-0c9e04a8ce158664b
+          - subnet-03116cec6d86063a7
   libs:
     Type: AWS::Serverless::LayerVersion
     Properties:
